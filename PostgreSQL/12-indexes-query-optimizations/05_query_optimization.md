@@ -1,3 +1,4 @@
+
 # Stage 12 — Database Performance
 ## 05 — Query Optimization
 
