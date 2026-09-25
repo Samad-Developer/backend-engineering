@@ -15,6 +15,7 @@ export const pool = new Pool({
   idleTimeoutMillis: 10_000,
 
   connectionTimeoutMillis: 2_000,
+
 });
 
 pool.on("error", (error) => {
