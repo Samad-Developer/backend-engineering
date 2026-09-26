@@ -12,3 +12,5 @@ export const getCustomer = async (req: Request, res: Response) => {
         data: customer,
     });
 }
+
+
