@@ -6,6 +6,46 @@
 
 Examples use `node-pg-migrate`.
 
+## Creating a Migration File
+
+Before writing any schema change, create a new TypeScript migration file:
+
+```bash
+pnpm migrate create create-customers -j ts
+```
+
+This creates a timestamped file inside the `migrations/` folder, for example:
+
+```text
+20260929152000_create-customers.ts
+```
+
+For a different schema change, replace `create-customers` with a descriptive name, for example:
+
+```bash
+pnpm migrate create add-customer-phone -j ts
+pnpm migrate create rename-customer-name-to-full-name -j ts
+pnpm migrate create add-orders-customer-index -j ts
+```
+
+Then write the forward change in `up()` and the reverse change in `down()` when appropriate.
+
+The practical cycle is:
+
+```text
+Create migration file
+↓
+Write up() / down()
+↓
+pnpm migrate up --dry-run
+↓
+pnpm migrate up
+↓
+Verify schema + pgmigrations
+```
+
+---
+
 ## 1. Add Table
 
 **Definition:**  
