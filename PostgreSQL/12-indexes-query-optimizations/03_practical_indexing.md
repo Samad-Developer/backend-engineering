@@ -199,22 +199,83 @@ ON orders(customer_id);
 
 ## 8. Unique Indexes
 
-A **unique index supports lookup and prevents duplicate indexed values**.
+A **unique index** is a normal index plus a rule: no two rows may have the same indexed value.
+
+| | Normal index | Unique index |
+|---|---|---|
+| Speeds up lookups | yes | yes |
+| Allows duplicates | yes | **no** |
 
 ```sql
-CREATE UNIQUE INDEX idx_users_email
-ON users(email);
+CREATE UNIQUE INDEX idx_users_email ON users (email);
 ```
 
-Duplicate values are rejected during `INSERT` or `UPDATE`.
+Duplicates are rejected during `INSERT` or `UPDATE` with error code `23505`.
 
-Also:
+### Unique constraint vs unique index
 
 ```sql
 email TEXT UNIQUE
+-- same as
+CONSTRAINT users_email_key UNIQUE (email)
 ```
 
-is implemented using a unique index internally.
+A `UNIQUE` constraint is enforced by a unique index that Postgres builds for you. They behave the same, but they differ in what you can write:
+
+| | `UNIQUE` constraint | `CREATE UNIQUE INDEX` |
+|---|---|---|
+| Rejects duplicates | yes | yes |
+| Can have a `WHERE` condition (partial) | **no** | **yes** |
+| Can use an expression, e.g. `lower(email)` | **no** | **yes** |
+
+Rule of thumb:
+- Unique among all rows, no exceptions: use a `UNIQUE` constraint.
+- Unique among only some rows, or on an expression: use a unique index.
+
+### Partial unique index
+
+Add `WHERE` and only rows matching the condition are indexed, so only they are checked for duplicates.
+
+```sql
+CREATE UNIQUE INDEX bookings_one_active_per_slot
+ON bookings (slot_id)
+WHERE status = 'confirmed';
+```
+
+Read it as: *among confirmed bookings, `slot_id` must be unique.*
+
+### Example: why BookEasy needs a partial index
+
+Rule: a slot can have only one **active** booking. Cancelled bookings are kept as history and don't count.
+
+```text
+Step 1  Ali books slot 1           id=1  slot_id=1  confirmed
+Step 2  Ali cancels                id=1  slot_id=1  cancelled
+Step 3  Sara books slot 1 again    id=1  slot_id=1  cancelled
+                                   id=2  slot_id=1  confirmed
+```
+
+`slot_id = 1` appears twice at the end, and that is correct.
+
+**With `UNIQUE (slot_id)`**: Step 3 fails, because `slot_id = 1` already exists in row 1. A cancelled slot could never be rebooked.
+```text
+ERROR: duplicate key value violates unique constraint "bookings_a_slot_id_key"
+```
+
+**With the partial unique index**: Step 3 works, because row 1 is cancelled and not in the index. A second *confirmed* booking for the same slot is still rejected:
+```text
+ERROR: duplicate key value violates unique constraint "bookings_one_active_per_slot"
+```
+
+This also stops double booking when two people click "Book" at the same moment. The database refuses the second insert whatever the app code does. The service catches error `23505` and returns `409 SLOT_TAKEN`.
+
+### Expression unique index
+
+Make emails unique ignoring upper and lower case:
+```sql
+CREATE UNIQUE INDEX users_email_lower_idx ON users (lower(email));
+```
+`Ali@x.com` and `ali@x.com` now count as the same email.
 
 ---
 
