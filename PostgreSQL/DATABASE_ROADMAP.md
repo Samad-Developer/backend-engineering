@@ -615,7 +615,7 @@ PostgreSQL
 
 ---
 
-# Phase 2 — Advanced PostgreSQL & Software Engineering
+# Phase 2 — Advanced PostgreSQL
 
 ## Advanced SQL
 - Window functions
@@ -703,7 +703,7 @@ PostgreSQL
 
 ---
 
-# Phase 2 — Full-Stack + AI Engineering
+# Phase 3 — Full-Stack + Advance Sofware Engineering + AI Engineering
 
 ## Backend Engineering
 - Redis
